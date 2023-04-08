@@ -1,5 +1,5 @@
 <template>
-  <el-scrollbar height="380px">
+  <el-scrollbar>
     <div class="transform">
       <div class="input">
         <el-input
@@ -44,10 +44,10 @@
       <div>
         <el-checkbox-group v-model="checkList" :min="1">
           <el-checkbox
-            v-for="item in transOptions"
+            v-for="(item, index) in transOptions"
             :key="item.value"
             :label="item.value"
-            :disabled="item.disabled"
+            @change="() => changeHandle(index)"
           >
             {{ item.label }}
           </el-checkbox>
@@ -55,10 +55,13 @@
       </div>
       <div class="result">
         <!--百度翻译-->
-        <el-card v-show="isQuery.baidu" class="box-card">
+        <el-card
+          v-if="isQuery.baidu && checkList.includes('baidu')"
+          class="box-card"
+        >
           <template #header>
             <div class="card-header">
-              <span>百度翻译</span>
+              <span>百度翻译【免费调用量5万字符/月】</span>
             </div>
           </template>
           <div
@@ -89,7 +92,7 @@
         </el-card>
         <!--有道翻译-->
         <el-card
-          v-show="isQuery.youdao && checkList.includes('youdao')"
+          v-if="isQuery.youdao && checkList.includes('youdao')"
           class="box-card"
         >
           <template #header>
@@ -103,21 +106,21 @@
             v-loading="loading.youdaoLoading"
             :element-loading-spinner="loadingSvg"
           >
-            <div v-if="transFormResult.youdao?.errorCode !== '0'" class="error">
+            <div v-if="transFormResult.youdao?.errorCode !== 0" class="error">
               网络错误，请稍后再试
             </div>
             <div
               v-else
-              v-for="item in transFormResult.youdao.translation"
+              v-for="item in transFormResult.youdao.translateResult"
               :key="item"
               class="result-item"
             >
-              <span>{{ item }}</span>
+              <span>{{ item[0]?.tgt }}</span>
               <el-icon
                 :size="20"
                 class="copy-icon"
                 title="复制"
-                @click="copy(item)"
+                @click="copy(item[0]?.tgt)"
                 ><CopyDocument
               /></el-icon>
             </div>
@@ -130,7 +133,7 @@
 
 <script setup>
 import { reactive, ref } from "vue";
-import { transFromBaidu, transFormYoudao } from "../api";
+import { transFromBaidu, transFormYoudao, transFormYoudaoV2 } from "../api";
 import ClipboardJS from "clipboard";
 import { ElMessage } from "element-plus";
 
@@ -142,10 +145,10 @@ const isQuery = ref({
 });
 const fromLang = ref("zh");
 const toLang = ref("en");
-const checkList = ref(["baidu"]);
+const checkList = ref(["baidu", "youdao"]);
 const transOptions = [
-  { label: "开启百度翻译", value: "baidu", disabled: true },
-  { label: "开启有道翻译", value: "youdao", disabled: false },
+  { label: "开启百度翻译", value: "baidu" },
+  { label: "开启有道翻译", value: "youdao" },
 ];
 
 const loading = reactive({
@@ -174,6 +177,11 @@ const switchHandle = () => {
   toLang.value = initLeft;
 };
 
+const changeHandle = (index) => {
+  const keys = Object.keys(isQuery.value);
+  isQuery.value[keys[index]] = false;
+};
+
 const copy = (val) => {
   const clipboard = new ClipboardJS(".copy-icon", {
     text: () => val,
@@ -187,41 +195,33 @@ const copy = (val) => {
   });
 };
 
-const getQueryParams = (type) => {
+const getQueryParams = () => {
   return {
-    from:
-      type === "youdao"
-        ? fromLang.value === "zh"
-          ? "zh-CHS"
-          : fromLang.value
-        : fromLang.value,
-    to:
-      type === "youdao"
-        ? toLang.value === "zh"
-          ? "zh-CHS"
-          : toLang.value
-        : toLang.value,
+    from: fromLang.value,
+    to: toLang.value,
     q: content.value,
   };
 };
 
-const transForm = async () => {
+const transForm = () => {
   if (!content.value) {
     isValid.value = true;
     return;
   }
-  isQuery.value.baidu = true;
-  loading.baiduLoading = true;
 
-  transFromBaidu(getQueryParams()).then((res) => {
-    loading.baiduLoading = false;
-    transFormResult.baidu = res.data;
-  });
+  if (checkList.value.includes("baidu")) {
+    isQuery.value.baidu = true;
+    loading.baiduLoading = true;
+    transFromBaidu(getQueryParams()).then((res) => {
+      loading.baiduLoading = false;
+      transFormResult.baidu = res.data;
+    });
+  }
 
   if (checkList.value.includes("youdao")) {
     loading.youdaoLoading = true;
     isQuery.value.youdao = true;
-    transFormYoudao(getQueryParams("youdao")).then((res) => {
+    transFormYoudaoV2(content.value).then((res) => {
       loading.youdaoLoading = false;
       transFormResult.youdao = res.data;
     });
@@ -301,6 +301,9 @@ const transForm = async () => {
   .el-checkbox {
     vertical-align: middle;
     margin-right: 10px;
+  }
+  .question-icon {
+    vertical-align: middle;
   }
 }
 </style>

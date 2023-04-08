@@ -50,7 +50,12 @@ export default defineConfig({
         target: 'http://openapi.youdao.com/api',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/youdao/, ''),
-      }
+      },
+      '/api': {
+        target: 'https://fanyi.youdao.com/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     }
   }
 });

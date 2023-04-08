@@ -42,4 +42,8 @@ const transFromBaidu = (params = {
   return axios.get(`${import.meta.env.VITE_APP_BAIDU_URL}/api/trans/vip/translate?q=${params.q}&from=${params.from}&to=${params.to}&appid=${appid}&salt=${salt}&sign=${sign}`)
 }
 
-export { transFromBaidu, transFormYoudao }
+const transFormYoudaoV2 = (q) => {
+  return axios.get(`${import.meta.env.VITE_APP_API}/translate?&doctype=json&type=AUTO&i=${q}`);
+}
+
+export { transFromBaidu, transFormYoudao, transFormYoudaoV2 }
