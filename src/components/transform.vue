@@ -232,7 +232,6 @@ const transForm = () => {
 <style lang="scss">
 .transform {
   width: 500px;
-  background: #fff;
   padding: 15px;
 
   .btn {
