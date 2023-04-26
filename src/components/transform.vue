@@ -145,7 +145,7 @@ const isQuery = ref({
 });
 const fromLang = ref("zh");
 const toLang = ref("en");
-const checkList = ref(["baidu", "youdao"]);
+const checkList = ref(["youdao"]);
 const transOptions = [
   { label: "开启百度翻译", value: "baidu" },
   { label: "开启有道翻译", value: "youdao" },
